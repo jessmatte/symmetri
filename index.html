@@ -1,0 +1,2354 @@
+<!DOCTYPE html>
+<html lang="sv">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Spegelsymmetri</title>
+  <style>
+    :root {
+      --bg: #f8fafc;
+      --surface: #ffffff;
+      --surface-muted: #f1f5f9;
+      --border: #e2e8f0;
+      --border-strong: #cbd5e1;
+      --text: #0f172a;
+      --text-muted: #475569;
+      --primary: #4338ca;
+      --primary-hover: #3730a3;
+      --primary-soft: #eef2ff;
+      --primary-border: #c7d2fe;
+      --emerald: #059669;
+      --emerald-soft: #ecfdf5;
+      --emerald-border: #a7f3d0;
+      --rose: #e11d48;
+      --rose-soft: #fff1f2;
+      --rose-border: #fecdd3;
+      --amber: #d97706;
+      --amber-soft: #fffbeb;
+      --amber-border: #fde68a;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Inter, Helvetica, Arial, sans-serif;
+      background-color: var(--bg);
+      color: var(--text);
+      height: 100vh;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+    }
+
+    /* Compact Header Bar */
+    .topbar {
+      height: 46px;
+      background: var(--surface);
+      border-bottom: 1px solid var(--border);
+      padding: 0 20px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      flex-shrink: 0;
+      z-index: 35;
+    }
+
+    .app-title {
+      font-size: 1.06rem;
+      font-weight: 800;
+      color: var(--text);
+      letter-spacing: -0.01em;
+    }
+
+    .topbar-tools {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .tool-dropdown-wrap {
+      position: relative;
+    }
+
+    .btn-tool {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 5px 12px;
+      border-radius: 8px;
+      border: 1.5px solid var(--border-strong);
+      background: var(--surface);
+      color: var(--text);
+      font-size: 0.82rem;
+      font-weight: 700;
+      cursor: pointer;
+      transition: all 0.15s ease;
+      white-space: nowrap;
+    }
+
+    .btn-tool:hover,
+    .btn-tool.open {
+      border-color: var(--primary);
+      background: var(--primary-soft);
+      color: var(--primary);
+    }
+
+    /* Key Concepts Dropdown */
+    .concepts-dropdown {
+      position: absolute;
+      top: calc(100% + 8px);
+      right: 0;
+      width: 470px;
+      max-width: 92vw;
+      background: var(--surface);
+      border: 1.5px solid var(--border-strong);
+      border-radius: 12px;
+      box-shadow: 0 14px 32px rgba(15, 23, 42, 0.18);
+      padding: 13px 15px;
+      display: none;
+      z-index: 65;
+    }
+
+    .concepts-dropdown.open {
+      display: block;
+    }
+
+    .dropdown-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 8px;
+    }
+
+    .dropdown-title {
+      font-size: 0.88rem;
+      font-weight: 800;
+      color: var(--text);
+    }
+
+    .dropdown-close {
+      background: none;
+      border: none;
+      font-size: 1.05rem;
+      color: var(--text-muted);
+      cursor: pointer;
+      padding: 2px 6px;
+      border-radius: 6px;
+    }
+
+    .dropdown-close:hover {
+      background: var(--surface-muted);
+      color: var(--text);
+    }
+
+    .concepts-list {
+      display: flex;
+      flex-direction: column;
+      gap: 7px;
+      max-height: 74vh;
+      overflow-y: auto;
+    }
+
+    .concept-item {
+      background: var(--surface-muted);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 7px 10px;
+      font-size: 0.8rem;
+      line-height: 1.42;
+      color: var(--text);
+    }
+
+    .concept-item strong {
+      color: var(--primary);
+      font-weight: 800;
+    }
+
+    .concept-item.highlight-rule {
+      background: var(--primary-soft);
+      border-color: var(--primary-border);
+    }
+
+    /* Single-Row 3-Phase Bar */
+    .phase-bar-wrap {
+      background: var(--surface);
+      border-bottom: 1px solid var(--border);
+      padding: 7px 20px;
+      flex-shrink: 0;
+      z-index: 25;
+    }
+
+    .phase-nav {
+      max-width: 1140px;
+      margin: 0 auto;
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 10px;
+    }
+
+    .phase-pill {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+      padding: 7px 14px;
+      border-radius: 10px;
+      border: 1.5px solid var(--border);
+      background: var(--surface-muted);
+      color: var(--text-muted);
+      font-size: 0.86rem;
+      font-weight: 700;
+      cursor: pointer;
+      transition: all 0.15s ease;
+    }
+
+    .phase-pill:hover:not(:disabled) {
+      border-color: var(--primary-border);
+      background: var(--primary-soft);
+      color: var(--primary);
+    }
+
+    .phase-pill.active {
+      background: var(--primary);
+      border-color: var(--primary);
+      color: #ffffff;
+      box-shadow: 0 2px 6px rgba(67, 56, 202, 0.24);
+    }
+
+    .phase-pill.completed:not(.active) {
+      background: var(--emerald-soft);
+      border-color: var(--emerald-border);
+      color: var(--emerald);
+    }
+
+    .phase-pill:disabled {
+      opacity: 0.55;
+      cursor: not-allowed;
+    }
+
+    .pill-score {
+      font-size: 0.77rem;
+      font-weight: 800;
+      padding: 2px 8px;
+      border-radius: 999px;
+      background: rgba(255, 255, 255, 0.22);
+      flex-shrink: 0;
+    }
+
+    .phase-pill:not(.active) .pill-score {
+      background: rgba(15, 23, 42, 0.08);
+    }
+
+    /* Main Workspace Container */
+    .main-wrap {
+      flex: 1;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 10px 20px;
+      overflow-y: auto;
+    }
+
+    .card {
+      width: 100%;
+      max-width: 1140px;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      box-shadow: 0 4px 16px rgba(15, 23, 42, 0.05);
+      padding: 15px 22px;
+      display: flex;
+      flex-direction: column;
+      gap: 11px;
+    }
+
+    .card-top {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      border-bottom: 1px solid var(--border);
+      padding-bottom: 8px;
+      gap: 12px;
+    }
+
+    .phase-heading {
+      font-size: 1.08rem;
+      font-weight: 800;
+      color: var(--text);
+    }
+
+    .phase-sub {
+      font-size: 0.82rem;
+      color: var(--text-muted);
+      margin-top: 2px;
+    }
+
+    .progress-box {
+      display: flex;
+      align-items: center;
+      gap: 9px;
+      flex-shrink: 0;
+    }
+
+    .dots {
+      display: flex;
+      gap: 5px;
+    }
+
+    .dot {
+      width: 12px;
+      height: 12px;
+      border-radius: 50%;
+      background: var(--surface-muted);
+      border: 1.5px solid var(--border-strong);
+      transition: all 0.2s ease;
+    }
+
+    .dot.filled {
+      background: var(--emerald);
+      border-color: var(--emerald);
+    }
+
+    .score-label {
+      font-size: 0.86rem;
+      font-weight: 800;
+      color: var(--primary);
+      min-width: 72px;
+      text-align: right;
+    }
+
+    /* Two-Column Chromebook Layout */
+    .two-col-workspace {
+      display: grid;
+      grid-template-columns: 270px 1fr;
+      gap: 16px;
+      align-items: stretch;
+    }
+
+    .visual-col {
+      display: flex;
+      flex-direction: column;
+    }
+
+    .work-col {
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      gap: 10px;
+      min-width: 0;
+    }
+
+    @media (max-width: 820px) {
+      .two-col-workspace {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    /* Visual Aid Panel & Before/After Fold Animations */
+    .visual-panel {
+      flex: 1;
+      background: #f8fafc;
+      border: 1.5px solid var(--primary-border);
+      border-radius: 13px;
+      padding: 11px 12px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+      text-align: center;
+    }
+
+    .visual-panel.from-mistake {
+      background: var(--amber-soft);
+      border-color: var(--amber-border);
+    }
+
+    .visual-badge {
+      font-size: 0.72rem;
+      font-weight: 800;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+      padding: 2px 10px;
+      border-radius: 999px;
+      background: var(--primary-soft);
+      color: var(--primary);
+      border: 1px solid var(--primary-border);
+    }
+
+    .visual-panel.from-mistake .visual-badge {
+      background: #fef3c7;
+      color: #92400e;
+      border-color: var(--amber-border);
+    }
+
+    .visual-svg-stage {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 5px;
+      width: 100%;
+    }
+
+    .fold-matrix-anim {
+      transition: transform 0.72s cubic-bezier(0.22, 1, 0.36, 1);
+    }
+
+    .visual-desc {
+      font-size: 0.77rem;
+      font-weight: 600;
+      color: var(--text-muted);
+      line-height: 1.38;
+      min-height: 3em;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .visual-panel.from-mistake .visual-desc {
+      color: #78350f;
+    }
+
+    .aid-controls {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      flex-wrap: wrap;
+    }
+
+    .btn-anim-step {
+      padding: 4px 10px;
+      border-radius: 7px;
+      border: 1.5px solid var(--primary-border);
+      background: #ffffff;
+      color: var(--primary);
+      font-size: 0.75rem;
+      font-weight: 700;
+      cursor: pointer;
+      transition: all 0.14s ease;
+    }
+
+    .btn-anim-step:hover {
+      background: var(--primary-soft);
+      border-color: var(--primary);
+    }
+
+    .btn-anim-step.selected {
+      background: var(--primary);
+      border-color: var(--primary);
+      color: #ffffff;
+    }
+
+    /* Prompt & Step Tags */
+    .prompt-banner {
+      font-size: 0.97rem;
+      font-weight: 600;
+      color: var(--text);
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+
+    .level-tag {
+      display: inline-flex;
+      align-items: center;
+      padding: 2px 9px;
+      border-radius: 999px;
+      font-size: 0.74rem;
+      font-weight: 800;
+      background: var(--primary-soft);
+      border: 1px solid var(--primary-border);
+      color: var(--primary);
+    }
+
+    .level-tag.diag {
+      background: #fef3c7;
+      border-color: #fde68a;
+      color: #92400e;
+    }
+
+    /* Phase 1: Interactive Symmetry-Line Drawing Canvas */
+    .line-draw-stage {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 22px;
+      background: var(--surface-muted);
+      border: 1px solid var(--border);
+      border-radius: 13px;
+      padding: 12px 18px;
+      flex-wrap: wrap;
+    }
+
+    .sym-line-svg {
+      background: #ffffff;
+      border: 1.5px solid var(--border-strong);
+      border-radius: 12px;
+      box-shadow: 0 2px 6px rgba(15, 23, 42, 0.04);
+      user-select: none;
+    }
+
+    .candidate-hit {
+      stroke: transparent;
+      stroke-width: 18;
+      cursor: pointer;
+    }
+
+    .candidate-guide {
+      stroke: #cbd5e1;
+      stroke-width: 2;
+      stroke-dasharray: 5 5;
+      pointer-events: none;
+      transition: stroke 0.15s ease, stroke-width 0.15s ease;
+    }
+
+    .candidate-group:hover .candidate-guide {
+      stroke: var(--primary);
+      stroke-width: 2.6;
+    }
+
+    .candidate-group.selected .candidate-guide {
+      stroke: #e11d48;
+      stroke-width: 3.2;
+      stroke-dasharray: none;
+    }
+
+    .candidate-group.verified-ok .candidate-guide {
+      stroke: #059669;
+      stroke-width: 3.4;
+      stroke-dasharray: none;
+    }
+
+    .line-draw-sidebar {
+      display: flex;
+      flex-direction: column;
+      gap: 9px;
+      max-width: 280px;
+    }
+
+    .line-counter-pill {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      padding: 6px 12px;
+      border-radius: 9px;
+      background: #ffffff;
+      border: 1.5px solid var(--primary-border);
+      font-size: 0.88rem;
+      font-weight: 800;
+      color: var(--primary);
+    }
+
+    /* Phase 2: Coordinate Grid Reflection (Vertical, Horizontal & 45 deg) */
+    .grid-reflect-wrap {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 20px;
+      background: var(--surface-muted);
+      border: 1px solid var(--border);
+      border-radius: 13px;
+      padding: 10px 16px;
+      flex-wrap: wrap;
+    }
+
+    .reflect-grid-svg {
+      background: #ffffff;
+      border: 1.5px solid var(--border-strong);
+      border-radius: 10px;
+      user-select: none;
+    }
+
+    .grid-node-hit {
+      fill: transparent;
+      cursor: pointer;
+    }
+
+    .grid-node-hover {
+      fill: rgba(67, 56, 202, 0.24);
+      pointer-events: none;
+      opacity: 0;
+      transition: opacity 0.1s ease;
+    }
+
+    .grid-node-group:hover .grid-node-hover {
+      opacity: 1;
+    }
+
+    .grid-side-controls {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      max-width: 255px;
+    }
+
+    .grid-legend-item {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 0.81rem;
+      font-weight: 600;
+      color: var(--text-muted);
+    }
+
+    .legend-swatch {
+      width: 14px;
+      height: 14px;
+      border-radius: 4px;
+      flex-shrink: 0;
+    }
+
+    .btn-small-secondary {
+      padding: 6px 12px;
+      border-radius: 8px;
+      border: 1.5px solid var(--border-strong);
+      background: #ffffff;
+      color: var(--text);
+      font-size: 0.81rem;
+      font-weight: 700;
+      cursor: pointer;
+      transition: all 0.14s ease;
+    }
+
+    .btn-small-secondary:hover:not(:disabled) {
+      border-color: var(--rose);
+      color: var(--rose);
+      background: var(--rose-soft);
+    }
+
+    /* Phase 3: Letter Symmetry Classification */
+    .letter-showcase-box {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: var(--surface-muted);
+      border: 1px solid var(--border);
+      border-radius: 13px;
+      padding: 12px 18px;
+    }
+
+    .choices-grid-2x2 {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 10px;
+    }
+
+    .choice-btn {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 11px 12px;
+      border-radius: 11px;
+      border: 2px solid var(--border-strong);
+      background: var(--surface);
+      color: var(--text);
+      font-size: 0.89rem;
+      font-weight: 700;
+      cursor: pointer;
+      transition: all 0.15s ease;
+      min-height: 54px;
+      text-align: center;
+      line-height: 1.3;
+    }
+
+    .choice-btn:hover:not(:disabled) {
+      border-color: var(--primary);
+      background: var(--primary-soft);
+      color: var(--primary);
+    }
+
+    .choice-btn.correct-pick {
+      border-color: var(--emerald);
+      background: var(--emerald-soft);
+      color: #065f46;
+    }
+
+    .choice-btn.wrong-pick {
+      border-color: var(--rose);
+      background: var(--rose-soft);
+      color: #9f1239;
+    }
+
+    .choice-btn:disabled {
+      cursor: default;
+    }
+
+    /* Feedback Banner & Controls */
+    .feedback-box {
+      padding: 9px 14px;
+      border-radius: 10px;
+      font-size: 0.86rem;
+      font-weight: 600;
+      line-height: 1.4;
+      display: none;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+    }
+
+    .feedback-box.show {
+      display: flex;
+    }
+
+    .feedback-box.success {
+      background: var(--emerald-soft);
+      border: 1px solid var(--emerald-border);
+      color: #065f46;
+    }
+
+    .feedback-box.error {
+      background: var(--rose-soft);
+      border: 1px solid var(--rose-border);
+      color: #9f1239;
+    }
+
+    .action-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      border-top: 1px solid var(--border);
+      padding-top: 9px;
+    }
+
+    .rule-reminder {
+      font-size: 0.8rem;
+      color: var(--text-muted);
+      font-weight: 500;
+    }
+
+    .btn-primary {
+      padding: 8px 18px;
+      border-radius: 10px;
+      border: none;
+      background: var(--primary);
+      color: #ffffff;
+      font-size: 0.91rem;
+      font-weight: 700;
+      cursor: pointer;
+      transition: background 0.15s ease, opacity 0.15s ease;
+    }
+
+    .btn-primary:hover:not(:disabled) {
+      background: var(--primary-hover);
+    }
+
+    .btn-primary:disabled {
+      opacity: 0.45;
+      cursor: not-allowed;
+    }
+
+    .btn-outline {
+      padding: 8px 14px;
+      border-radius: 9px;
+      border: 1.5px solid var(--primary);
+      background: #ffffff;
+      color: var(--primary);
+      font-size: 0.89rem;
+      font-weight: 700;
+      cursor: pointer;
+      transition: background 0.15s ease;
+    }
+
+    .btn-outline:hover {
+      background: var(--primary-soft);
+    }
+
+    /* Teacher Badge */
+    .teacher-badge {
+      position: fixed;
+      bottom: 8px;
+      right: 12px;
+      background: #1e293b;
+      color: #f8fafc;
+      font-size: 0.72rem;
+      font-weight: 600;
+      padding: 4px 10px;
+      border-radius: 999px;
+      display: none;
+      z-index: 40;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+    }
+
+    .teacher-badge.show {
+      display: block;
+    }
+
+    /* 2-Minute Lock Overlay Modal (> 3 consecutive mistakes) */
+    .freeze-overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(15, 23, 42, 0.84);
+      backdrop-filter: blur(5px);
+      display: none;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+      z-index: 120;
+    }
+
+    .freeze-overlay.open {
+      display: flex;
+    }
+
+    .freeze-card {
+      background: #ffffff;
+      border: 2.5px solid var(--amber);
+      border-radius: 18px;
+      max-width: 480px;
+      width: 100%;
+      padding: 28px 26px;
+      text-align: center;
+      box-shadow: 0 22px 48px rgba(0, 0, 0, 0.35);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 14px;
+    }
+
+    .freeze-icon {
+      width: 58px;
+      height: 58px;
+      border-radius: 50%;
+      background: var(--amber-soft);
+      border: 2px solid var(--amber-border);
+      color: var(--amber);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.75rem;
+    }
+
+    .freeze-title {
+      font-size: 1.32rem;
+      font-weight: 800;
+      color: var(--text);
+    }
+
+    .freeze-text {
+      font-size: 0.96rem;
+      color: var(--text-muted);
+      line-height: 1.5;
+    }
+
+    .lock-timer-box {
+      background: var(--surface-muted);
+      border: 1.5px solid var(--border-strong);
+      border-radius: 12px;
+      padding: 10px 24px;
+      font-size: 1.85rem;
+      font-weight: 800;
+      font-variant-numeric: tabular-nums;
+      color: var(--primary);
+      letter-spacing: 0.04em;
+    }
+
+    .freeze-teacher-bar {
+      margin-top: 6px;
+      padding-top: 12px;
+      border-top: 1px solid var(--border);
+      width: 100%;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      font-size: 0.78rem;
+      color: var(--text-muted);
+    }
+
+    .btn-teacher-unfreeze {
+      background: var(--surface-muted);
+      border: 1px solid var(--border-strong);
+      color: var(--text);
+      font-size: 0.78rem;
+      font-weight: 700;
+      padding: 5px 11px;
+      border-radius: 7px;
+      cursor: pointer;
+    }
+
+    .btn-teacher-unfreeze:hover {
+      background: var(--primary-soft);
+      border-color: var(--primary);
+      color: var(--primary);
+    }
+
+    /* Phase Complete Banner */
+    .complete-panel {
+      text-align: center;
+      padding: 20px 12px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 13px;
+    }
+
+    .complete-panel h2 {
+      font-size: 1.35rem;
+      color: var(--emerald);
+    }
+
+    .complete-panel p {
+      color: var(--text-muted);
+      font-size: 0.97rem;
+      max-width: 560px;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Compact Header Bar -->
+  <header class="topbar">
+    <div class="app-title">Spegelsymmetri</div>
+
+    <div class="topbar-tools">
+      <div class="tool-dropdown-wrap" id="conceptsWrap">
+        <button type="button" class="btn-tool" id="conceptsToggleBtn" aria-expanded="false">
+          <span>Nyckelbegrepp</span>
+          <span id="conceptsArrow">▾</span>
+        </button>
+
+        <div class="concepts-dropdown" id="conceptsDropdown" role="region" aria-label="Nyckelbegrepp för spegelsymmetri">
+          <div class="dropdown-header">
+            <span class="dropdown-title">Nyckelbegrepp</span>
+            <button type="button" class="dropdown-close" id="conceptsCloseBtn" aria-label="Stäng">✕</button>
+          </div>
+          <div class="concepts-list">
+            <div class="concept-item highlight-rule">
+              <strong>Spegelsymmetri:</strong> En figur är spegelsymmetrisk om du kan vika den längs en rät linje (symmetrilinje) så att båda halvorna täcker varandra exakt.
+            </div>
+            <div class="concept-item">
+              <strong>Rotationssymmetri vs. Spegelsymmetri:</strong> Figurer som bara ser likadana ut när du <em>snurrar</em> dem (t.ex. en sned parallellogram, S-våg eller bokstaven <strong>Z</strong>) har <strong>0 symmetrilinjer</strong>.
+            </div>
+            <div class="concept-item highlight-rule">
+              <strong>Spegling i rutnät (rakt &amp; 45° diagonalt):</strong> Gå alltid <strong>vinkelrätt (90°)</strong> mot den röda symmetrilinjen och räkna lika många steg på andra sidan. Vid en 45° diagonal spegellinje räknar du steg snett över rutorna!
+            </div>
+            <div class="concept-item">
+              <strong>Symmetriska versaler:</strong><br/>
+              • <em>Endast lodrät:</em> A, M, T, U, V, W, Y, Å, Ä, Ö<br/>
+              • <em>Endast vågrät:</em> B, C, D, E, K<br/>
+              • <em>Både lodrät &amp; vågrät:</em> H, I, O, X<br/>
+              • <em>Ingen (0 st):</em> F, G, J, L, N, P, Q, R, S, Z
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <!-- Single-Row 3-Phase Bar -->
+  <div class="phase-bar-wrap">
+    <nav class="phase-nav" id="phaseNav" aria-label="Faser"></nav>
+  </div>
+
+  <!-- Main Workspace -->
+  <main class="main-wrap">
+    <section class="card" id="mainCard" aria-live="polite"></section>
+  </main>
+
+  <!-- Subtle Teacher Unlock Badge -->
+  <div class="teacher-badge" id="teacherBadge">Lärarläge: Alla faser upplåsta (Shift + L)</div>
+
+  <!-- 2-Minute Lock Modal (> 3 Consecutive Mistakes) -->
+  <div class="freeze-overlay" id="freezeOverlay" role="dialog" aria-modal="true" aria-labelledby="freezeTitle">
+    <div class="freeze-card">
+      <div class="freeze-icon" aria-hidden="true">✋</div>
+      <h2 class="freeze-title" id="freezeTitle">Skärmen är låst i 2 minuter</h2>
+      <p class="freeze-text">
+        Du har svarat fel <strong>mer än tre gånger i rad</strong>. Räck upp handen och be din lärare om hjälp att gå igenom uppgiften innan du fortsätter!
+      </p>
+      <div class="lock-timer-box" id="lockTimerDisplay" aria-live="off">02:00</div>
+      <div class="freeze-teacher-bar">
+        <span>Lärare: tryck <strong>Shift + L</strong></span>
+        <button type="button" class="btn-teacher-unfreeze" id="teacherUnfreezeBtn">Lås upp (Lärare)</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    (function () {
+      const PHASES = [
+        {
+          id: 0,
+          shortName: "1. Rita symmetrilinjer",
+          title: "Fas 1: Rita ut symmetrilinjerna",
+          desc: "Klicka på de streckade hjälplinjerna för att rita ut alla symmetrilinjer på märken, skyltar och figurer.",
+          subtypes: ["emblem_1_line", "sign_2_lines", "triangle_3_lines", "badge_4_6_lines", "asymmetric_0_lines"]
+        },
+        {
+          id: 1,
+          shortName: "2. Spegla i rutnät (Rakt & 45°)",
+          title: "Fas 2: Spegla sträcka och triangel i rutnät",
+          desc: "Räkna steg vinkelrätt mot den röda symmetrilinjen – först lodrätt och vågrätt, sedan längs en 45° diagonal!",
+          subtypes: ["seg_vertical", "tri_vertical", "tri_horizontal_or_cross", "seg_diag_45", "tri_diag_45"]
+        },
+        {
+          id: 2,
+          shortName: "3. Symmetriska bokstäver",
+          title: "Fas 3: Symmetriska bokstäver",
+          desc: "Undersök stora bokstäver (A–Ö) och avgör om de har lodrät, vågrät, båda eller ingen symmetrilinje.",
+          subtypes: ["letter_vertical", "letter_horizontal", "letter_both", "letter_none"]
+        }
+      ];
+
+      const TARGET_SCORE = 5;
+      const LOCK_CONSECUTIVE_LIMIT = 3;
+      const LOCK_DURATION_MS = 2 * 60 * 1000;
+
+      // Capital letter symmetry lookup (Swedish alphabet)
+      const LETTER_SYM = {
+        A: "V", B: "H", C: "H", D: "H", E: "H", F: "N", G: "N", H: "B",
+        I: "B", J: "N", K: "H", L: "N", M: "V", N: "N", O: "B", P: "N",
+        Q: "N", R: "N", S: "N", T: "V", U: "V", V: "V", W: "V", X: "B",
+        Y: "V", Z: "N", Å: "V", Ä: "V", Ö: "V"
+      };
+
+      const state = {
+        currentPhase: 0,
+        scores: [0, 0, 0],
+        unlockedPhase: 0,
+        teacherMode: false,
+        consecutiveMistakes: 0,
+        lockedUntil: 0,
+        lockTimerId: null,
+        subtypeDecks: [[], [], []],
+        subtypeHistory: [[], [], []],
+        question: null,
+        questionSolved: false,
+        // Interactive state per question
+        selectedLineIds: new Set(),
+        placedGridPoints: [],
+        showGridGuides: false,
+        // Visual aid state
+        showVisualAid: false,
+        visualFromMistake: false,
+        visualIsAfter: false
+      };
+
+      function randInt(min, max) {
+        return Math.floor(Math.random() * (max - min + 1)) + min;
+      }
+
+      function pickRandom(arr) {
+        return arr[Math.floor(Math.random() * arr.length)];
+      }
+
+      function shuffle(arr) {
+        const copy = arr.slice();
+        for (let i = copy.length - 1; i > 0; i--) {
+          const j = Math.floor(Math.random() * (i + 1));
+          [copy[i], copy[j]] = [copy[j], copy[i]];
+        }
+        return copy;
+      }
+
+      function drawBalancedSubtype(phaseIdx) {
+        // Phase 2 ramps smoothly across the 5 points:
+        // 0: vertical segment -> 1: vertical triangle -> 2: horizontal/crossing triangle -> 3: 45° diagonal segment -> 4: 45° diagonal triangle
+        if (phaseIdx === 1) {
+          const sc = state.scores[1];
+          if (sc === 0) return "seg_vertical";
+          if (sc === 1) return "tri_vertical";
+          if (sc === 2) return "tri_horizontal_or_cross";
+          if (sc === 3) return "seg_diag_45";
+          return "tri_diag_45";
+        }
+
+        const subtypes = PHASES[phaseIdx].subtypes;
+        const history = state.subtypeHistory[phaseIdx];
+        let deck = state.subtypeDecks[phaseIdx];
+
+        if (deck.length === 0) deck = shuffle(subtypes);
+
+        const last1 = history.length >= 1 ? history[history.length - 1] : null;
+        const last2 = history.length >= 2 ? history[history.length - 2] : null;
+        const forbidden = last1 !== null && last1 === last2 ? last1 : null;
+
+        let pickIdx = deck.findIndex((st) => st !== forbidden);
+        if (pickIdx === -1) {
+          deck = shuffle(subtypes);
+          pickIdx = deck.findIndex((st) => st !== forbidden);
+          if (pickIdx === -1) pickIdx = 0;
+        }
+
+        const chosen = deck.splice(pickIdx, 1)[0];
+        state.subtypeDecks[phaseIdx] = deck;
+        history.push(chosen);
+        return chosen;
+      }
+
+      /* ========================================================================
+         PHASE 1 SHAPE CATALOG (Original emblems, road signs & geometric figures)
+         ======================================================================== */
+      const SHAPE_CATALOG = {
+        shield_crown: {
+          name: "Vapensköld",
+          lines: ["V"],
+          candidates: ["V", "H", "D1", "D2"],
+          renderSVG: (size = 150) => `
+            <svg width="${size}" height="${size}" viewBox="0 0 120 120">
+              <path d="M26 22 H94 V56 C94 82 60 102 60 102 C60 102 26 82 26 56 Z" fill="#eef2ff" stroke="#1e1b4b" stroke-width="3.2"/>
+              <path d="M40 44 L50 32 L60 44 L70 32 L80 44 V56 H40 Z" fill="#4338ca"/>
+              <circle cx="60" cy="74" r="8" fill="#4338ca"/>
+            </svg>`
+        },
+        chevron_twin: {
+          name: "Dubbelvinkel",
+          lines: ["V"],
+          candidates: ["V", "H", "D1", "D2"],
+          renderSVG: (size = 150) => `
+            <svg width="${size}" height="${size}" viewBox="0 0 120 120">
+              <polygon points="60,18 98,52 86,62 60,39 34,62 22,52" fill="#0f172a"/>
+              <polygon points="60,54 98,88 86,98 60,75 34,98 22,88" fill="#4338ca"/>
+            </svg>`
+        },
+        arrow_up_sign: {
+          name: "Påbudspil",
+          lines: ["V"],
+          candidates: ["V", "H", "D1", "D2"],
+          renderSVG: (size = 150) => `
+            <svg width="${size}" height="${size}" viewBox="0 0 120 120">
+              <circle cx="60" cy="60" r="46" fill="#2563eb" stroke="#1e3a8a" stroke-width="3"/>
+              <polygon points="60,26 84,54 69,54 69,90 51,90 51,54 36,54" fill="#ffffff"/>
+            </svg>`
+        },
+        isosceles_trapezoid: {
+          name: "Likbent parallelltrapets",
+          lines: ["V"],
+          candidates: ["V", "H", "D1", "D2"],
+          renderSVG: (size = 150) => `
+            <svg width="${size}" height="${size}" viewBox="0 0 120 120">
+              <polygon points="36,34 84,34 102,86 18,86" fill="#dbeafe" stroke="#1e3a8a" stroke-width="3"/>
+            </svg>`
+        },
+        no_entry_sign: {
+          name: "Förbudsmärke",
+          lines: ["V", "H"],
+          candidates: ["V", "H", "D1", "D2"],
+          renderSVG: (size = 150) => `
+            <svg width="${size}" height="${size}" viewBox="0 0 120 120">
+              <circle cx="60" cy="60" r="46" fill="#dc2626" stroke="#991b1b" stroke-width="3"/>
+              <rect x="28" y="51" width="64" height="18" rx="3" fill="#ffffff"/>
+            </svg>`
+        },
+        hourglass_emblem: {
+          name: "Timglasmärke",
+          lines: ["V", "H"],
+          candidates: ["V", "H", "D1", "D2"],
+          renderSVG: (size = 150) => `
+            <svg width="${size}" height="${size}" viewBox="0 0 120 120">
+              <polygon points="28,24 92,24 60,60" fill="#4338ca" stroke="#1e1b4b" stroke-width="2.5"/>
+              <polygon points="28,96 92,96 60,60" fill="#4338ca" stroke="#1e1b4b" stroke-width="2.5"/>
+            </svg>`
+        },
+        rhombus_emblem: {
+          name: "Romb",
+          lines: ["V", "H"],
+          candidates: ["V", "H", "D1", "D2"],
+          renderSVG: (size = 150) => `
+            <svg width="${size}" height="${size}" viewBox="0 0 120 120">
+              <polygon points="60,18 94,60 60,102 26,60" fill="#fef3c7" stroke="#b45309" stroke-width="3"/>
+            </svg>`
+        },
+        yield_sign: {
+          name: "Väjningsplikt",
+          lines: ["V", "T1", "T2"],
+          candidates: ["V", "H", "T1", "T2"],
+          renderSVG: (size = 150) => `
+            <svg width="${size}" height="${size}" viewBox="0 0 120 120">
+              <polygon points="16,28 104,28 60,104" fill="#facc15" stroke="#dc2626" stroke-width="8" stroke-linejoin="round"/>
+            </svg>`
+        },
+        tri_propeller: {
+          name: "Trebladigt märke",
+          lines: ["V", "T1", "T2"],
+          candidates: ["V", "H", "T1", "T2"],
+          renderSVG: (size = 150) => `
+            <svg width="${size}" height="${size}" viewBox="0 0 120 120">
+              <circle cx="60" cy="60" r="45" fill="none" stroke="#1e293b" stroke-width="3"/>
+              <polygon points="60,60 51,22 69,22" fill="#4338ca"/>
+              <polygon points="60,60 97,71 88,87" fill="#4338ca"/>
+              <polygon points="60,60 23,71 32,87" fill="#4338ca"/>
+            </svg>`
+        },
+        priority_diamond: {
+          name: "Huvudledsskylt",
+          lines: ["V", "H", "D1", "D2"],
+          candidates: ["V", "H", "D1", "D2"],
+          renderSVG: (size = 150) => `
+            <svg width="${size}" height="${size}" viewBox="0 0 120 120">
+              <polygon points="60,14 106,60 60,106 14,60" fill="#ffffff" stroke="#1e293b" stroke-width="3"/>
+              <polygon points="60,30 90,60 60,90 30,60" fill="#facc15" stroke="#ca8a04" stroke-width="2"/>
+            </svg>`
+        },
+        four_star_badge: {
+          name: "Fyruddig stjärna",
+          lines: ["V", "H", "D1", "D2"],
+          candidates: ["V", "H", "D1", "D2"],
+          renderSVG: (size = 150) => `
+            <svg width="${size}" height="${size}" viewBox="0 0 120 120">
+              <polygon points="60,16 71,49 104,60 71,71 60,104 49,71 16,60 49,49" fill="#eef2ff" stroke="#4338ca" stroke-width="3"/>
+            </svg>`
+        },
+        hexagon_badge: {
+          name: "Regelbunden sexhörning",
+          lines: ["V", "H", "H1", "H2", "H3", "H4"],
+          candidates: ["V", "H", "H1", "H2", "H3", "H4"],
+          renderSVG: (size = 150) => `
+            <svg width="${size}" height="${size}" viewBox="0 0 120 120">
+              <polygon points="60,16 98,38 98,82 60,104 22,82 22,38" fill="#ecfdf5" stroke="#059669" stroke-width="3.2"/>
+            </svg>`
+        },
+        s_wave_emblem: {
+          name: "S-våg (rotationssymmetrisk)",
+          lines: [],
+          candidates: ["V", "H", "D1", "D2"],
+          renderSVG: (size = 150) => `
+            <svg width="${size}" height="${size}" viewBox="0 0 120 120">
+              <path d="M84 32 H44 C34 32 34 58 46 58 H74 C86 58 86 88 76 88 H36" fill="none" stroke="#4338ca" stroke-width="11" stroke-linecap="round"/>
+            </svg>`
+        },
+        parallelogram_skew: {
+          name: "Sned parallellogram",
+          lines: [],
+          candidates: ["V", "H", "D1", "D2"],
+          renderSVG: (size = 150) => `
+            <svg width="${size}" height="${size}" viewBox="0 0 120 120">
+              <polygon points="36,32 100,32 84,88 20,88" fill="#ffe4e6" stroke="#be123c" stroke-width="3"/>
+            </svg>`
+        },
+        z_lightning: {
+          name: "Z-blixt",
+          lines: [],
+          candidates: ["V", "H", "D1", "D2"],
+          renderSVG: (size = 150) => `
+            <svg width="${size}" height="${size}" viewBox="0 0 120 120">
+              <polyline points="30,28 88,28 32,92 90,92" fill="none" stroke="#0f172a" stroke-width="10" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>`
+        }
+      };
+
+      const LINE_COORDS = {
+        V:  { x1: 60, y1: 6,  x2: 60, y2: 114 },
+        H:  { x1: 6,  y1: 60, x2: 114, y2: 60 },
+        D1: { x1: 16, y1: 16, x2: 104, y2: 104 },
+        D2: { x1: 104, y1: 16, x2: 16, y2: 104 },
+        T1: { x1: 15, y1: 79, x2: 105, y2: 27 },
+        T2: { x1: 15, y1: 27, x2: 105, y2: 79 },
+        H1: { x1: 33, y1: 13, x2: 87, y2: 107 },
+        H2: { x1: 87, y1: 13, x2: 33, y2: 107 },
+        H3: { x1: 13, y1: 33, x2: 107, y2: 87 },
+        H4: { x1: 13, y1: 87, x2: 107, y2: 33 }
+      };
+
+      /* ========================================================================
+         ANIMATED BEFORE / AFTER FOLDING MODEL (Including 45° Diagonal Matrices)
+         ======================================================================== */
+      function buildVisualPanelHTML(q) {
+        const isAfter = state.visualIsAfter;
+        const badgeText = state.visualFromMistake ? "Hjälpmedel (Viktest)" : "Figur: Spegelvikning";
+
+        let svgContent = "";
+        let descText = isAfter
+          ? "Efter: Spegelhalvan viks över den röda symmetrilinjen!"
+          : "Före: Klicka på Efter för att vika figuren längs den röda linjen.";
+
+        if (q.type === "draw_lines") {
+          const shape = q.shape;
+          const inner = shape.renderSVG(120).replace(/<svg[^>]*>|<\/svg>/g, "");
+          const hasV = shape.lines.includes("V");
+          const hasH = shape.lines.includes("H");
+          const foldMatrix = hasV || !hasH
+            ? "matrix(-1, 0, 0, 1, 120, 0)"
+            : "matrix(1, 0, 0, -1, 0, 120)";
+          const clipRect = hasV || !hasH
+            ? `<rect x="0" y="0" width="60" height="120"/>`
+            : `<rect x="0" y="0" width="120" height="60"/>`;
+          const axisLine = hasV || !hasH
+            ? `<line x1="60" y1="6" x2="60" y2="114" stroke="#e11d48" stroke-width="2.5" stroke-dasharray="5 4"/>`
+            : `<line x1="6" y1="60" x2="114" y2="60" stroke="#e11d48" stroke-width="2.5" stroke-dasharray="5 4"/>`;
+
+          const activeTransform = isAfter ? foldMatrix : "matrix(1, 0, 0, 1, 0, 0)";
+          svgContent = `
+            <svg width="136" height="136" viewBox="0 0 120 120" style="display:block;">
+              <defs><clipPath id="foldClip1">${clipRect}</clipPath></defs>
+              <g opacity="0.25">${inner}</g>
+              <g clip-path="url(#foldClip1)">${inner}</g>
+              <g clip-path="url(#foldClip1)" class="fold-matrix-anim" id="foldAnimTarget" data-after-matrix="${foldMatrix}" style="transform: ${activeTransform};">
+                ${inner}
+              </g>
+              ${axisLine}
+            </svg>
+          `;
+          if (shape.lines.length === 0) {
+            descText = isAfter
+              ? "Efter: Halvorna täcker INTE varandra – 0 symmetrilinjer!"
+              : "Före: Testa att vika figuren – passar halvorna ihop?";
+          }
+        } else if (q.type === "grid_reflect") {
+          const n = q.gridSize;
+          const cell = 18;
+          const W = n * cell;
+          let gridLines = "";
+          for (let i = 0; i <= n; i++) {
+            gridLines += `<line x1="${i * cell}" y1="0" x2="${i * cell}" y2="${W}" stroke="#cbd5e1" stroke-width="1"/>`;
+            gridLines += `<line x1="0" y1="${i * cell}" x2="${W}" y2="${i * cell}" stroke="#cbd5e1" stroke-width="1"/>`;
+          }
+
+          let axisSVG = "";
+          let foldMatrix = "matrix(1, 0, 0, 1, 0, 0)";
+          if (q.axisType === "V") {
+            const x0 = q.axisPos * cell;
+            axisSVG = `<line x1="${x0}" y1="0" x2="${x0}" y2="${W}" stroke="#e11d48" stroke-width="2.5" stroke-dasharray="4 3"/>`;
+            foldMatrix = `matrix(-1, 0, 0, 1, ${2 * x0}, 0)`;
+          } else if (q.axisType === "H") {
+            const y0 = q.axisPos * cell;
+            axisSVG = `<line x1="0" y1="${y0}" x2="${W}" y2="${y0}" stroke="#e11d48" stroke-width="2.5" stroke-dasharray="4 3"/>`;
+            foldMatrix = `matrix(1, 0, 0, -1, 0, ${2 * y0})`;
+          } else if (q.axisType === "D_MAIN") {
+            axisSVG = `<line x1="0" y1="0" x2="${W}" y2="${W}" stroke="#e11d48" stroke-width="2.5" stroke-dasharray="4 3"/>`;
+            foldMatrix = `matrix(0, 1, 1, 0, 0, 0)`;
+          } else {
+            axisSVG = `<line x1="0" y1="${W}" x2="${W}" y2="0" stroke="#e11d48" stroke-width="2.5" stroke-dasharray="4 3"/>`;
+            foldMatrix = `matrix(0, -1, -1, 0, ${W}, ${W})`;
+          }
+
+          const pts = q.sourcePoints.map((p) => `${p.x * cell},${p.y * cell}`).join(" ");
+          const origShape = q.sourcePoints.length === 2
+            ? `<line x1="${q.sourcePoints[0].x * cell}" y1="${q.sourcePoints[0].y * cell}" x2="${q.sourcePoints[1].x * cell}" y2="${q.sourcePoints[1].y * cell}" stroke="#0f172a" stroke-width="2.5"/>`
+            : `<polygon points="${pts}" fill="rgba(67,56,202,0.18)" stroke="#0f172a" stroke-width="2.2"/>`;
+
+          const activeTransform = isAfter ? foldMatrix : "matrix(1, 0, 0, 1, 0, 0)";
+          svgContent = `
+            <svg width="${W}" height="${W}" viewBox="0 0 ${W} ${W}" style="display:block; background:#fff; border:1px solid #cbd5e1; border-radius:6px;">
+              ${gridLines}
+              ${origShape}
+              <g class="fold-matrix-anim" id="foldAnimTarget" data-after-matrix="${foldMatrix}" style="transform: ${activeTransform};">
+                ${origShape}
+              </g>
+              ${axisSVG}
+            </svg>
+          `;
+          if (q.isDiag) {
+            descText = isAfter
+              ? "Efter: Spegelbilden viks vinkelrätt (90°) över den 45° diagonala linjen!"
+              : "Före: Vid en 45° diagonal spegellinje räknar du steg snett över rutorna.";
+          }
+        } else {
+          // Phase 3: Letter Fold Visual
+          const ch = q.letter;
+          const sym = LETTER_SYM[ch];
+          const isH = sym === "H";
+          const foldMatrix = isH
+            ? "matrix(1, 0, 0, -1, 0, 120)"
+            : "matrix(-1, 0, 0, 1, 120, 0)";
+          const clipRect = isH
+            ? `<rect x="0" y="0" width="120" height="60"/>`
+            : `<rect x="0" y="0" width="60" height="120"/>`;
+          const axisLine = isH
+            ? `<line x1="12" y1="60" x2="108" y2="60" stroke="#e11d48" stroke-width="2.5" stroke-dasharray="5 4"/>`
+            : `<line x1="60" y1="12" x2="60" y2="108" stroke="#e11d48" stroke-width="2.5" stroke-dasharray="5 4"/>`;
+
+          const letterTxt = `<text x="60" y="86" text-anchor="middle" font-size="78" font-weight="800" fill="#1e1b4b" font-family="Arial, Helvetica, sans-serif">${ch}</text>`;
+          const activeTransform = isAfter ? foldMatrix : "matrix(1, 0, 0, 1, 0, 0)";
+
+          svgContent = `
+            <svg width="136" height="136" viewBox="0 0 120 120" style="display:block;">
+              <defs><clipPath id="letterClipHalf">${clipRect}</clipPath></defs>
+              <g opacity="0.24">${letterTxt}</g>
+              <g clip-path="url(#letterClipHalf)">${letterTxt}</g>
+              <g clip-path="url(#letterClipHalf)" class="fold-matrix-anim" id="foldAnimTarget" data-after-matrix="${foldMatrix}" style="transform: ${activeTransform};">
+                ${letterTxt}
+              </g>
+              ${axisLine}
+            </svg>
+          `;
+          if (sym === "N") {
+            descText = isAfter
+              ? `Efter: Bokstaven ${ch} täcker inte sig själv – 0 symmetrilinjer!`
+              : `Före: Testa att vika bokstaven ${ch}.`;
+          }
+        }
+
+        const panelClasses = ["visual-panel"];
+        if (state.visualFromMistake) panelClasses.push("from-mistake");
+
+        return `
+          <div class="${panelClasses.join(" ")}" id="visualAidPanel" role="region" aria-label="Visuell vikning">
+            <span class="visual-badge">${badgeText}</span>
+            <div class="visual-svg-stage">${svgContent}</div>
+            <div class="visual-desc" id="visualDescText">${descText}</div>
+            <div class="aid-controls">
+              <button type="button" class="btn-anim-step ${!isAfter ? "selected" : ""}" id="btnVisualBefore">Före</button>
+              <button type="button" class="btn-anim-step ${isAfter ? "selected" : ""}" id="btnVisualAfter">Efter</button>
+              <button type="button" class="btn-anim-step" id="btnVisualReplay">↻ Vik igen</button>
+            </div>
+          </div>
+        `;
+      }
+
+      function triggerVisualAfter(replayFromBefore = false) {
+        const target = document.getElementById("foldAnimTarget");
+        if (!target) {
+          state.visualIsAfter = true;
+          return;
+        }
+        const afterMatrix = target.dataset.afterMatrix;
+        const applyAfter = () => {
+          state.visualIsAfter = true;
+          const t = document.getElementById("foldAnimTarget");
+          if (t) t.style.transform = afterMatrix;
+          document.getElementById("btnVisualBefore")?.classList.remove("selected");
+          document.getElementById("btnVisualAfter")?.classList.add("selected");
+        };
+        if (replayFromBefore) {
+          state.visualIsAfter = false;
+          target.style.transform = "matrix(1, 0, 0, 1, 0, 0)";
+          document.getElementById("btnVisualBefore")?.classList.add("selected");
+          document.getElementById("btnVisualAfter")?.classList.remove("selected");
+          requestAnimationFrame(() => requestAnimationFrame(applyAfter));
+        } else {
+          requestAnimationFrame(applyAfter);
+        }
+      }
+
+      function setVisualBeforeDirect() {
+        state.visualIsAfter = false;
+        const t = document.getElementById("foldAnimTarget");
+        if (t) t.style.transform = "matrix(1, 0, 0, 1, 0, 0)";
+        document.getElementById("btnVisualBefore")?.classList.add("selected");
+        document.getElementById("btnVisualAfter")?.classList.remove("selected");
+      }
+
+      function wireVisualControls() {
+        document.getElementById("btnVisualBefore")?.addEventListener("click", () => {
+          if (!isScreenLocked()) setVisualBeforeDirect();
+        });
+        document.getElementById("btnVisualAfter")?.addEventListener("click", () => {
+          if (!isScreenLocked()) triggerVisualAfter(false);
+        });
+        document.getElementById("btnVisualReplay")?.addEventListener("click", () => {
+          if (!isScreenLocked()) triggerVisualAfter(true);
+        });
+      }
+
+      /* ========================================================================
+         PHASE 1 GENERATOR: DRAW SYMMETRY LINES
+         ======================================================================== */
+      function generatePhase1BySubtype(subtype) {
+        let key;
+        if (subtype === "emblem_1_line") {
+          key = pickRandom(["shield_crown", "chevron_twin", "arrow_up_sign", "isosceles_trapezoid"]);
+        } else if (subtype === "sign_2_lines") {
+          key = pickRandom(["no_entry_sign", "hourglass_emblem", "rhombus_emblem"]);
+        } else if (subtype === "triangle_3_lines") {
+          key = pickRandom(["yield_sign", "tri_propeller"]);
+        } else if (subtype === "badge_4_6_lines") {
+          key = pickRandom(["priority_diamond", "four_star_badge", "hexagon_badge"]);
+        } else {
+          key = pickRandom(["s_wave_emblem", "parallelogram_skew", "z_lightning"]);
+        }
+
+        const shape = SHAPE_CATALOG[key];
+        return {
+          subtype,
+          type: "draw_lines",
+          shapeKey: key,
+          shape,
+          prompt: `Rita ut alla symmetrilinjer för <strong>${shape.name}</strong> genom att klicka på de streckade linjerna.`,
+          explanation: shape.lines.length === 0
+            ? `Rätt! ${shape.name} har 0 symmetrilinjer.`
+            : `Rätt! ${shape.name} har ${shape.lines.length} symmetrilinje${shape.lines.length > 1 ? "r" : ""}.`
+        };
+      }
+
+      /* ========================================================================
+         PHASE 2 GENERATOR: MERGED SEGMENT + TRIANGLE GRID REFLECTION (WITH 45°)
+         ======================================================================== */
+      function reflectGridPoint(pt, axisType, axisPos, gridSize) {
+        if (axisType === "V") return { x: 2 * axisPos - pt.x, y: pt.y };
+        if (axisType === "H") return { x: pt.x, y: 2 * axisPos - pt.y };
+        if (axisType === "D_MAIN") return { x: pt.y, y: pt.x }; // across y = x
+        return { x: gridSize - pt.y, y: gridSize - pt.x }; // across x + y = gridSize
+      }
+
+      function generatePhase2BySubtype(subtype) {
+        const gridSize = 8; // 8x8 square grid supports vertical, horizontal & 45° diagonal lines cleanly
+
+        if (subtype === "seg_vertical") {
+          const axisType = "V";
+          const axisPos = 4;
+          const fromRight = Math.random() < 0.35;
+          const sourcePoints = fromRight
+            ? [
+                { x: randInt(5, 7), y: randInt(1, 2) },
+                { x: randInt(6, 7), y: randInt(5, 7) }
+              ]
+            : [
+                { x: randInt(1, 3), y: randInt(1, 2) },
+                { x: randInt(2, 3), y: randInt(5, 7) }
+              ];
+          const targetPoints = sourcePoints.map((p) => reflectGridPoint(p, axisType, axisPos, gridSize));
+          return {
+            subtype,
+            type: "grid_reflect",
+            levelBadge: "Steg 1: Sträcka (lodrät linje)",
+            isDiag: false,
+            gridSize,
+            figKind: "segment",
+            axisType,
+            axisPos,
+            sourcePoints,
+            targetPoints,
+            prompt: "Rita en spegelbild av sträckan AB genom att klicka ut de två ändpunkterna i rutnätet.",
+            explanation: "Rätt! Båda ändpunkterna ligger lika många rutor på andra sidan om den lodräta symmetrilinjen."
+          };
+        }
+
+        if (subtype === "tri_vertical") {
+          const axisType = "V";
+          const axisPos = 4;
+          const touchAxis = Math.random() < 0.4;
+          const sourcePoints = touchAxis
+            ? [
+                { x: 4, y: randInt(1, 2) },
+                { x: randInt(1, 2), y: randInt(3, 4) },
+                { x: randInt(2, 3), y: randInt(5, 7) }
+              ]
+            : [
+                { x: randInt(1, 2), y: randInt(2, 4) },
+                { x: randInt(2, 3), y: randInt(1, 2) },
+                { x: randInt(2, 3), y: randInt(5, 7) }
+              ];
+          const targetPoints = sourcePoints.map((p) => reflectGridPoint(p, axisType, axisPos, gridSize));
+          return {
+            subtype,
+            type: "grid_reflect",
+            levelBadge: "Steg 2: Triangel (lodrät linje)",
+            isDiag: false,
+            gridSize,
+            figKind: "triangle",
+            axisType,
+            axisPos,
+            sourcePoints,
+            targetPoints,
+            prompt: "Rita en spegelbild av triangeln ABC över den lodräta röda symmetrilinjen.",
+            explanation: "Rätt! Alla tre hörn är speglade lika många rutor rakt över den lodräta symmetrilinjen."
+          };
+        }
+
+        if (subtype === "tri_horizontal_or_cross") {
+          const useCrossing = Math.random() < 0.45;
+          if (useCrossing) {
+            const axisType = "V";
+            const axisPos = 4;
+            const sourcePoints = [
+              { x: randInt(1, 2), y: randInt(2, 5) },
+              { x: randInt(5, 7), y: randInt(1, 3) },
+              { x: randInt(3, 4), y: randInt(6, 7) }
+            ];
+            const targetPoints = sourcePoints.map((p) => reflectGridPoint(p, axisType, axisPos, gridSize));
+            return {
+              subtype,
+              type: "grid_reflect",
+              levelBadge: "Steg 3: Triangel över linjen",
+              isDiag: false,
+              gridSize,
+              figKind: "triangle",
+              axisType,
+              axisPos,
+              sourcePoints,
+              targetPoints,
+              prompt: "Triangeln ABC korsar symmetrilinjen! Spegla varje hörn till sin motsatta sida.",
+              explanation: "Snyggt! Hörn på vänster sida speglas åt höger, och hörn på höger sida speglas åt vänster."
+            };
+          } else {
+            const axisType = "H";
+            const axisPos = 4;
+            const sourcePoints = [
+              { x: randInt(1, 3), y: randInt(1, 2) },
+              { x: randInt(5, 7), y: randInt(1, 2) },
+              { x: randInt(3, 5), y: 3 }
+            ];
+            const targetPoints = sourcePoints.map((p) => reflectGridPoint(p, axisType, axisPos, gridSize));
+            return {
+              subtype,
+              type: "grid_reflect",
+              levelBadge: "Steg 3: Triangel (vågrät linje)",
+              isDiag: false,
+              gridSize,
+              figKind: "triangle",
+              axisType,
+              axisPos,
+              sourcePoints,
+              targetPoints,
+              prompt: "Rita en spegelbild av triangeln ABC över den vågräta röda symmetrilinjen.",
+              explanation: "Rätt! Alla tre hörn är speglade lika många rutor rakt nedanför den vågräta symmetrilinjen."
+            };
+          }
+        }
+
+        // 45° Diagonal Segment or Triangle!
+        const isTri = subtype === "tri_diag_45";
+        const useMainDiag = Math.random() < 0.5;
+        const axisType = useMainDiag ? "D_MAIN" : "D_ANTI";
+        let sourcePoints;
+
+        if (useMainDiag) {
+          sourcePoints = isTri
+            ? pickRandom([
+                [{ x: 4, y: 1 }, { x: 7, y: 2 }, { x: 6, y: 4 }],
+                [{ x: 3, y: 0 }, { x: 7, y: 1 }, { x: 5, y: 3 }]
+              ])
+            : pickRandom([
+                [{ x: 3, y: 1 }, { x: 6, y: 2 }],
+                [{ x: 5, y: 1 }, { x: 7, y: 4 }]
+              ]);
+        } else {
+          sourcePoints = isTri
+            ? pickRandom([
+                [{ x: 1, y: 3 }, { x: 3, y: 1 }, { x: 4, y: 2 }],
+                [{ x: 1, y: 5 }, { x: 2, y: 2 }, { x: 4, y: 1 }]
+              ])
+            : pickRandom([
+                [{ x: 1, y: 4 }, { x: 3, y: 1 }],
+                [{ x: 1, y: 2 }, { x: 2, y: 5 }]
+              ]);
+        }
+
+        const targetPoints = sourcePoints.map((p) => reflectGridPoint(p, axisType, 0, gridSize));
+        return {
+          subtype,
+          type: "grid_reflect",
+          levelBadge: isTri ? "Steg 5: Triangel (45° diagonal)" : "Steg 4: Sträcka (45° diagonal)",
+          isDiag: true,
+          gridSize,
+          figKind: isTri ? "triangle" : "segment",
+          axisType,
+          axisPos: 0,
+          sourcePoints,
+          targetPoints,
+          prompt: isTri
+            ? "Utmaning (45° diagonal): Spegla triangeln ABC vinkelrätt över den sneda röda symmetrilinjen."
+            : "Utmaning (45° diagonal): Spegla sträckan AB vinkelrätt över den sneda röda symmetrilinjen.",
+          explanation: "Grymt! Vid en 45° diagonal spegellinje räknar du lika många diagonala rutsteg vinkelrätt (90°) på andra sidan."
+        };
+      }
+
+      /* ========================================================================
+         PHASE 3 GENERATOR: CAPITAL LETTER SYMMETRY
+         ======================================================================== */
+      function generatePhase3BySubtype(subtype) {
+        let letter;
+        if (subtype === "letter_vertical") {
+          letter = pickRandom(["A", "M", "T", "U", "V", "W", "Y", "Å", "Ä", "Ö"]);
+        } else if (subtype === "letter_horizontal") {
+          letter = pickRandom(["B", "C", "D", "E", "K"]);
+        } else if (subtype === "letter_both") {
+          letter = pickRandom(["H", "I", "O", "X"]);
+        } else {
+          letter = pickRandom(["F", "G", "J", "L", "N", "P", "R", "S", "Z"]);
+        }
+
+        const symType = LETTER_SYM[letter];
+        const descMap = {
+          V: `Bokstaven <strong>${letter}</strong> har endast en <strong>lodrät</strong> symmetrilinje.`,
+          H: `Bokstaven <strong>${letter}</strong> har endast en <strong>vågrät</strong> symmetrilinje.`,
+          B: `Bokstaven <strong>${letter}</strong> har både en <strong>lodrät och en vågrät</strong> symmetrilinje.`,
+          N: `Bokstaven <strong>${letter}</strong> saknar spegelsymmetri (<strong>0</strong> symmetrilinjer).`
+        };
+
+        return {
+          subtype,
+          type: "letter_classify",
+          letter,
+          expectedSym: symType,
+          prompt: `Vilken typ av spegelsymmetri har bokstaven <strong>${letter}</strong>?`,
+          choices: [
+            { id: "V", label: "Endast lodrät symmetrilinje", correct: symType === "V" },
+            { id: "H", label: "Endast vågrät symmetrilinje", correct: symType === "H" },
+            { id: "B", label: "Både lodrät och vågrät", correct: symType === "B" },
+            { id: "N", label: "Ingen symmetrilinje (0 st)", correct: symType === "N" }
+          ],
+          explanation: `Rätt! ${descMap[symType]}`
+        };
+      }
+
+      function createQuestionForPhase(phaseIdx) {
+        const subtype = drawBalancedSubtype(phaseIdx);
+        let q;
+        let attempts = 0;
+        const prevSig = state.question ? JSON.stringify(state.question) : "";
+        do {
+          if (phaseIdx === 0) q = generatePhase1BySubtype(subtype);
+          else if (phaseIdx === 1) q = generatePhase2BySubtype(subtype);
+          else q = generatePhase3BySubtype(subtype);
+          attempts++;
+        } while (JSON.stringify(q) === prevSig && attempts < 10);
+        return q;
+      }
+
+      // 2-Minute Lock Helpers
+      function isScreenLocked() {
+        return state.lockedUntil > Date.now();
+      }
+
+      function formatCountdown(ms) {
+        const totalSeconds = Math.max(0, Math.ceil(ms / 1000));
+        const mins = Math.floor(totalSeconds / 60);
+        const secs = totalSeconds % 60;
+        return `${String(mins).padStart(2, "0")}:${String(secs).padStart(2, "0")}`;
+      }
+
+      function updateLockOverlayUI() {
+        const overlay = document.getElementById("freezeOverlay");
+        const timerDisplay = document.getElementById("lockTimerDisplay");
+        const remaining = state.lockedUntil - Date.now();
+        if (remaining <= 0) {
+          unfreezeApp();
+          return;
+        }
+        overlay.classList.add("open");
+        timerDisplay.textContent = formatCountdown(remaining);
+      }
+
+      function triggerFreeze() {
+        state.lockedUntil = Date.now() + LOCK_DURATION_MS;
+        updateLockOverlayUI();
+        if (state.lockTimerId) clearInterval(state.lockTimerId);
+        state.lockTimerId = setInterval(updateLockOverlayUI, 250);
+      }
+
+      function unfreezeApp() {
+        state.lockedUntil = 0;
+        state.consecutiveMistakes = 0;
+        if (state.lockTimerId) {
+          clearInterval(state.lockTimerId);
+          state.lockTimerId = null;
+        }
+        document.getElementById("freezeOverlay")?.classList.remove("open");
+      }
+
+      function loadNewQuestion() {
+        if (isScreenLocked()) return;
+        const q = createQuestionForPhase(state.currentPhase);
+        state.question = q;
+        state.questionSolved = false;
+        state.selectedLineIds = new Set();
+        state.placedGridPoints = [];
+        state.showGridGuides = false;
+
+        // Show visual folding aid upfront in Fas 3 (letters); auto-reveal on mistakes in Fas 1 & 2
+        state.showVisualAid = state.currentPhase === 2;
+        state.visualFromMistake = false;
+        state.visualIsAfter = false;
+
+        render();
+      }
+
+      function recordMistake(message) {
+        state.scores[state.currentPhase] = Math.max(0, state.scores[state.currentPhase] - 1);
+        state.consecutiveMistakes += 1;
+
+        if (state.question.type === "grid_reflect") {
+          state.showGridGuides = true;
+        }
+
+        if (!state.showVisualAid) {
+          state.showVisualAid = true;
+          state.visualFromMistake = true;
+          state.visualIsAfter = false;
+        }
+
+        render();
+        showFeedback(message, "error");
+
+        if (state.consecutiveMistakes > LOCK_CONSECUTIVE_LIMIT) {
+          triggerFreeze();
+        }
+      }
+
+      function recordCorrectPoint(message) {
+        state.consecutiveMistakes = 0;
+        state.questionSolved = true;
+
+        if (state.question.type === "grid_reflect") {
+          state.showGridGuides = true;
+        }
+
+        if (state.scores[state.currentPhase] < TARGET_SCORE) {
+          state.scores[state.currentPhase] += 1;
+        }
+        if (
+          state.scores[state.currentPhase] >= TARGET_SCORE &&
+          state.unlockedPhase === state.currentPhase &&
+          state.currentPhase < PHASES.length - 1
+        ) {
+          state.unlockedPhase = state.currentPhase + 1;
+        }
+
+        render();
+        showFeedback(message, "success");
+
+        if (state.showVisualAid) {
+          triggerVisualAfter(false);
+        }
+      }
+
+      function renderTopBar() {
+        const nav = document.getElementById("phaseNav");
+        nav.innerHTML = PHASES.map((p) => {
+          const isUnlocked = state.teacherMode || p.id <= state.unlockedPhase;
+          const isActive = p.id === state.currentPhase;
+          const isCompleted = state.scores[p.id] >= TARGET_SCORE;
+          const classes = ["phase-pill"];
+          if (isActive) classes.push("active");
+          if (isCompleted) classes.push("completed");
+          const icon = isCompleted ? "✓" : (!isUnlocked ? "🔒" : "");
+          return `
+            <button type="button" class="${classes.join(" ")}" data-phase="${p.id}" ${!isUnlocked ? "disabled" : ""}>
+              <span>${icon ? icon + " " : ""}${p.shortName}</span>
+              <span class="pill-score">${state.scores[p.id]}/${TARGET_SCORE}</span>
+            </button>
+          `;
+        }).join("");
+
+        nav.querySelectorAll(".phase-pill").forEach((btn) => {
+          btn.addEventListener("click", () => {
+            if (isScreenLocked()) return;
+            const targetId = Number(btn.dataset.phase);
+            if (state.teacherMode || targetId <= state.unlockedPhase) {
+              state.currentPhase = targetId;
+              loadNewQuestion();
+            }
+          });
+        });
+
+        document.getElementById("teacherBadge").classList.toggle("show", state.teacherMode);
+      }
+
+      function showFeedback(text, type) {
+        const box = document.getElementById("feedbackBox");
+        if (!box) return;
+        box.className = `feedback-box show ${type}`;
+        box.innerHTML = `<span>${text}</span>`;
+      }
+
+      function wrapInTwoColIfVisual(workInnerHTML, q) {
+        if (!state.showVisualAid) {
+          return `<div class="work-col">${workInnerHTML}</div>`;
+        }
+        return `
+          <div class="two-col-workspace">
+            <div class="visual-col">
+              ${buildVisualPanelHTML(q)}
+            </div>
+            <div class="work-col">
+              ${workInnerHTML}
+            </div>
+          </div>
+        `;
+      }
+
+      /* ========================================================================
+         MAIN RENDERER
+         ======================================================================== */
+      function render() {
+        renderTopBar();
+        const card = document.getElementById("mainCard");
+        const phase = PHASES[state.currentPhase];
+        const score = state.scores[state.currentPhase];
+        const q = state.question;
+
+        let dotsHTML = "";
+        for (let i = 0; i < TARGET_SCORE; i++) {
+          dotsHTML += `<span class="dot ${i < score ? "filled" : ""}"></span>`;
+        }
+
+        const headerHTML = `
+          <div class="card-top">
+            <div>
+              <h1 class="phase-heading">${phase.title}</h1>
+              <p class="phase-sub">${phase.desc}</p>
+            </div>
+            <div class="progress-box">
+              <div class="dots">${dotsHTML}</div>
+              <div class="score-label">${score} / ${TARGET_SCORE} poäng</div>
+            </div>
+          </div>
+        `;
+
+        // Phase completed screen
+        if (score >= TARGET_SCORE && state.questionSolved) {
+          const isLastPhase = state.currentPhase === PHASES.length - 1;
+          card.innerHTML = `
+            ${headerHTML}
+            <div class="complete-panel">
+              <h2>${isLastPhase ? "Alla 3 faser är klara!" : `${phase.shortName} avklarad (${TARGET_SCORE}/${TARGET_SCORE})!`}</h2>
+              <p>
+                ${isLastPhase
+                  ? "Bra jobbat! Du behärskar nu symmetrilinjer, spegelbilder i rutnät (inklusive 45° diagonaler) och symmetriska bokstäver."
+                  : `Du har samlat ihop ${TARGET_SCORE} poäng och låst upp nästa fas.`}
+              </p>
+              <div style="display:flex; gap:12px; margin-top:4px;">
+                ${!isLastPhase
+                  ? `<button type="button" class="btn-primary" id="nextPhaseBtn">Gå till ${PHASES[state.currentPhase + 1].shortName} →</button>`
+                  : `<button type="button" class="btn-outline" id="practiceMoreBtn">Öva fler uppgifter i denna fas</button>`}
+              </div>
+            </div>
+          `;
+          document.getElementById("nextPhaseBtn")?.addEventListener("click", () => {
+            if (!isScreenLocked()) {
+              state.currentPhase += 1;
+              loadNewQuestion();
+            }
+          });
+          document.getElementById("practiceMoreBtn")?.addEventListener("click", () => {
+            if (!isScreenLocked()) loadNewQuestion();
+          });
+          return;
+        }
+
+        // ======================================================================
+        // PHASE 1: DRAW SYMMETRY LINES ON EMBLEMS, ROAD SIGNS & SHAPES
+        // ======================================================================
+        if (q.type === "draw_lines") {
+          const shape = q.shape;
+          const shapeInner = shape.renderSVG(215).replace(/<svg[^>]*>|<\/svg>/g, "");
+
+          const linesSVG = shape.candidates.map((cid) => {
+            const lc = LINE_COORDS[cid];
+            const isSel = state.selectedLineIds.has(cid);
+            const isTrue = shape.lines.includes(cid);
+            const gCls = ["candidate-group"];
+            if (state.questionSolved && isTrue) gCls.push("verified-ok");
+            else if (isSel) gCls.push("selected");
+
+            return `
+              <g class="${gCls.join(" ")}" data-lid="${cid}">
+                <line x1="${lc.x1}" y1="${lc.y1}" x2="${lc.x2}" y2="${lc.y2}" class="candidate-guide"/>
+                <line x1="${lc.x1}" y1="${lc.y1}" x2="${lc.x2}" y2="${lc.y2}" class="candidate-hit"/>
+              </g>
+            `;
+          }).join("");
+
+          const workHTML = `
+            <div class="prompt-banner">${q.prompt}</div>
+            <div class="line-draw-stage">
+              <svg class="sym-line-svg" width="215" height="215" viewBox="0 0 120 120">
+                ${shapeInner}
+                ${linesSVG}
+              </svg>
+
+              <div class="line-draw-sidebar">
+                <div class="line-counter-pill">
+                  Valda symmetrilinjer: ${state.selectedLineIds.size} st
+                </div>
+                <p style="font-size:0.82rem; color:var(--text-muted); line-height:1.42;">
+                  Klicka på en streckad linje för att rita en symmetrilinje (röd). Klicka igen för att ta bort den. Om figuren saknar symmetrilinjer lämnar du <strong>0 st</strong> valda.
+                </p>
+                <button type="button" class="btn-small-secondary" id="clearLinesBtn" ${state.questionSolved ? "disabled" : ""}>
+                  Rensa linjer
+                </button>
+              </div>
+            </div>
+            <div class="feedback-box" id="feedbackBox"></div>
+          `;
+
+          card.innerHTML = `
+            ${headerHTML}
+            ${wrapInTwoColIfVisual(workHTML, q)}
+            <div class="action-row">
+              <span class="rule-reminder">Kom ihåg: Båda sidor om en symmetrilinje måste vara exakta spegelbilder.</span>
+              <div style="display:flex; gap:10px;">
+                <button type="button" class="btn-primary" id="checkLinesBtn" style="${state.questionSolved ? "display:none;" : ""}">Rätta symmetrilinjer</button>
+                <button type="button" class="btn-primary" id="nextQuestionBtn" style="${state.questionSolved ? "display:inline-block;" : "display:none;"}">Nästa uppgift →</button>
+              </div>
+            </div>
+          `;
+
+          wireVisualControls();
+
+          card.querySelectorAll(".candidate-group").forEach((grp) => {
+            grp.addEventListener("click", () => {
+              if (isScreenLocked() || state.questionSolved) return;
+              const lid = grp.dataset.lid;
+              if (state.selectedLineIds.has(lid)) state.selectedLineIds.delete(lid);
+              else state.selectedLineIds.add(lid);
+              render();
+            });
+          });
+
+          document.getElementById("clearLinesBtn")?.addEventListener("click", () => {
+            if (isScreenLocked() || state.questionSolved) return;
+            state.selectedLineIds.clear();
+            render();
+          });
+
+          document.getElementById("checkLinesBtn")?.addEventListener("click", () => {
+            if (isScreenLocked() || state.questionSolved) return;
+            const picked = Array.from(state.selectedLineIds).sort();
+            const expected = shape.lines.slice().sort();
+            const exactMatch = picked.length === expected.length && picked.every((v, i) => v === expected[i]);
+
+            if (exactMatch) {
+              recordCorrectPoint(q.explanation);
+              if (state.scores[state.currentPhase] >= TARGET_SCORE) setTimeout(render, 850);
+            } else {
+              let msg = "";
+              if (expected.length === 0) {
+                msg = `${shape.name} har 0 symmetrilinjer – den ser bara likadan ut om du snurrar den, inte om du viker den (-1 poäng).`;
+              } else if (picked.length < expected.length) {
+                msg = `Du har hittat ${picked.length} av ${expected.length} symmetrilinjer. Leta efter fler sätt att vika figuren mitt itu (-1 poäng).`;
+              } else {
+                msg = `Någon av linjerna du ritade delar inte figuren i två spegelvända halvor. Kontrollera vinklar och hörn (-1 poäng).`;
+              }
+              recordMistake(msg);
+            }
+          });
+
+          document.getElementById("nextQuestionBtn")?.addEventListener("click", loadNewQuestion);
+          return;
+        }
+
+        // ======================================================================
+        // PHASE 2: GRID REFLECTION (SEGMENTS & TRIANGLES, VERTICAL/HORIZ/45° DIAG)
+        // ======================================================================
+        if (q.type === "grid_reflect") {
+          const n = q.gridSize;
+          const cell = 33;
+          const pad = 16;
+          const svgW = n * cell + pad * 2;
+          const maxNeeded = q.figKind === "segment" ? 2 : 3;
+
+          let gridLines = "";
+          for (let i = 0; i <= n; i++) {
+            const pos = pad + i * cell;
+            gridLines += `<line x1="${pos}" y1="${pad}" x2="${pos}" y2="${pad + n * cell}" stroke="#bae6fd" stroke-width="1.3"/>`;
+            gridLines += `<line x1="${pad}" y1="${pos}" x2="${pad + n * cell}" y2="${pos}" stroke="#bae6fd" stroke-width="1.3"/>`;
+          }
+
+          let axisLine = "";
+          if (q.axisType === "V") {
+            const x0 = pad + q.axisPos * cell;
+            axisLine = `<line x1="${x0}" y1="${pad - 6}" x2="${x0}" y2="${pad + n * cell + 6}" stroke="#e11d48" stroke-width="3" stroke-dasharray="7 5"/>`;
+          } else if (q.axisType === "H") {
+            const y0 = pad + q.axisPos * cell;
+            axisLine = `<line x1="${pad - 6}" y1="${y0}" x2="${pad + n * cell + 6}" y2="${y0}" stroke="#e11d48" stroke-width="3" stroke-dasharray="7 5"/>`;
+          } else if (q.axisType === "D_MAIN") {
+            axisLine = `<line x1="${pad - 5}" y1="${pad - 5}" x2="${pad + n * cell + 5}" y2="${pad + n * cell + 5}" stroke="#e11d48" stroke-width="3" stroke-dasharray="7 5"/>`;
+          } else {
+            axisLine = `<line x1="${pad - 5}" y1="${pad + n * cell + 5}" x2="${pad + n * cell + 5}" y2="${pad - 5}" stroke="#e11d48" stroke-width="3" stroke-dasharray="7 5"/>`;
+          }
+
+          // Perpendicular Distance Guides (shown automatically on mistake or after solving)
+          let guidesSVG = "";
+          if (state.showGridGuides) {
+            q.sourcePoints.forEach((sp, idx) => {
+              const tp = q.targetPoints[idx];
+              const fx = (sp.x + tp.x) / 2;
+              const fy = (sp.y + tp.y) / 2;
+              const sx = pad + sp.x * cell;
+              const sy = pad + sp.y * cell;
+              const midX = pad + fx * cell;
+              const midY = pad + fy * cell;
+              const tx = pad + tp.x * cell;
+              const ty = pad + tp.y * cell;
+
+              const endX = state.questionSolved ? tx : midX;
+              const endY = state.questionSolved ? ty : midY;
+              const gColor = state.questionSolved ? "#059669" : "#d97706";
+
+              const stepCount = q.isDiag
+                ? Math.abs(sp.x - tp.x)
+                : Math.max(Math.abs(sp.x - fx), Math.abs(sp.y - fy));
+
+              guidesSVG += `
+                <line x1="${sx}" y1="${sy}" x2="${endX}" y2="${endY}" stroke="${gColor}" stroke-width="2" stroke-dasharray="4 3"/>
+                <circle cx="${midX}" cy="${midY}" r="3.2" fill="${gColor}"/>
+                <text x="${(sx + midX) / 2}" y="${(sy + midY) / 2 - 5}" font-size="10.5" font-weight="800" fill="${gColor}" text-anchor="middle">${stepCount}</text>
+              `;
+            });
+          }
+
+          const srcCoords = q.sourcePoints.map((p) => ({ x: pad + p.x * cell, y: pad + p.y * cell }));
+          let sourceSVG = "";
+          if (q.figKind === "segment") {
+            sourceSVG = `
+              <line x1="${srcCoords[0].x}" y1="${srcCoords[0].y}" x2="${srcCoords[1].x}" y2="${srcCoords[1].y}" stroke="#0f172a" stroke-width="3" stroke-linecap="round"/>
+              ${srcCoords.map((pt, i) => `
+                <circle cx="${pt.x}" cy="${pt.y}" r="4.5" fill="#0f172a"/>
+                <text x="${pt.x - 10}" y="${pt.y - 7}" font-size="11" font-weight="800" fill="#0f172a">${i === 0 ? "A" : "B"}</text>
+              `).join("")}
+            `;
+          } else {
+            const polyStr = srcCoords.map((p) => `${p.x},${p.y}`).join(" ");
+            sourceSVG = `
+              <polygon points="${polyStr}" fill="rgba(15, 23, 42, 0.08)" stroke="#0f172a" stroke-width="2.6" stroke-linejoin="round"/>
+              ${srcCoords.map((pt, i) => `
+                <circle cx="${pt.x}" cy="${pt.y}" r="4" fill="#0f172a"/>
+                <text x="${pt.x - 10}" y="${pt.y - 6}" font-size="11" font-weight="800" fill="#0f172a">${["A", "B", "C"][i]}</text>
+              `).join("")}
+            `;
+          }
+
+          const userCoords = state.placedGridPoints.map((p) => ({ x: pad + p.x * cell, y: pad + p.y * cell }));
+          const strokeCol = state.questionSolved ? "#059669" : "#4338ca";
+          const fillCol = state.questionSolved ? "rgba(5,150,105,0.16)" : "rgba(67,56,202,0.16)";
+          let userSVG = "";
+          if (userCoords.length === 2) {
+            userSVG += `<line x1="${userCoords[0].x}" y1="${userCoords[0].y}" x2="${userCoords[1].x}" y2="${userCoords[1].y}" stroke="${strokeCol}" stroke-width="3" stroke-linecap="round"/>`;
+          } else if (userCoords.length === 3) {
+            const uPoly = userCoords.map((p) => `${p.x},${p.y}`).join(" ");
+            userSVG += `<polygon points="${uPoly}" fill="${fillCol}" stroke="${strokeCol}" stroke-width="2.6" stroke-linejoin="round"/>`;
+          }
+          userCoords.forEach((pt) => {
+            userSVG += `<circle cx="${pt.x}" cy="${pt.y}" r="5.5" fill="${strokeCol}" stroke="#ffffff" stroke-width="1.5"/>`;
+          });
+
+          let nodesSVG = "";
+          if (!state.questionSolved) {
+            for (let c = 0; c <= n; c++) {
+              for (let r = 0; r <= n; r++) {
+                const cx = pad + c * cell;
+                const cy = pad + r * cell;
+                nodesSVG += `
+                  <g class="grid-node-group" data-gx="${c}" data-gy="${r}">
+                    <circle cx="${cx}" cy="${cy}" r="7" class="grid-node-hover"/>
+                    <circle cx="${cx}" cy="${cy}" r="11" class="grid-node-hit"/>
+                  </g>
+                `;
+              }
+            }
+          }
+
+          const workHTML = `
+            <div class="prompt-banner">
+              <span class="level-tag ${q.isDiag ? "diag" : ""}">${q.levelBadge}</span>
+              <span>${q.prompt}</span>
+            </div>
+            <div class="grid-reflect-wrap">
+              <svg class="reflect-grid-svg" width="${svgW}" height="${svgW}" viewBox="0 0 ${svgW} ${svgW}">
+                ${gridLines}
+                ${guidesSVG}
+                ${sourceSVG}
+                ${userSVG}
+                ${axisLine}
+                ${nodesSVG}
+              </svg>
+
+              <div class="grid-side-controls">
+                <div class="line-counter-pill">
+                  Placerade punkter: ${state.placedGridPoints.length} / ${maxNeeded}
+                </div>
+                <div class="grid-legend-item">
+                  <span class="legend-swatch" style="background:#0f172a;"></span>
+                  <span>Ursprungsfigur</span>
+                </div>
+                <div class="grid-legend-item">
+                  <span class="legend-swatch" style="background:#e11d48;"></span>
+                  <span>Symmetrilinje</span>
+                </div>
+                <div class="grid-legend-item">
+                  <span class="legend-swatch" style="background:#4338ca;"></span>
+                  <span>Din spegelbild (klicka för att placera/ta bort)</span>
+                </div>
+                <button type="button" class="btn-small-secondary" id="clearGridPtsBtn" ${state.questionSolved ? "disabled" : ""}>
+                  Rensa punkter
+                </button>
+              </div>
+            </div>
+            <div class="feedback-box" id="feedbackBox"></div>
+          `;
+
+          card.innerHTML = `
+            ${headerHTML}
+            ${wrapInTwoColIfVisual(workHTML, q)}
+            <div class="action-row">
+              <span class="rule-reminder">
+                ${q.isDiag
+                  ? "Tips vid 45° diagonal: Räkna antal diagonala rutsteg vinkelrätt mot den röda linjen!"
+                  : "Räkna rutor vinkelrätt mot den röda symmetrilinjen."}
+              </span>
+              <div style="display:flex; gap:10px;">
+                <button type="button" class="btn-primary" id="checkGridBtn" style="${state.questionSolved ? "display:none;" : ""}">Rätta spegelbild</button>
+                <button type="button" class="btn-primary" id="nextQuestionBtn" style="${state.questionSolved ? "display:inline-block;" : "display:none;"}">Nästa uppgift →</button>
+              </div>
+            </div>
+          `;
+
+          wireVisualControls();
+
+          card.querySelectorAll(".grid-node-group").forEach((node) => {
+            node.addEventListener("click", () => {
+              if (isScreenLocked() || state.questionSolved) return;
+              const gx = Number(node.dataset.gx);
+              const gy = Number(node.dataset.gy);
+              const existingIdx = state.placedGridPoints.findIndex((p) => p.x === gx && p.y === gy);
+              if (existingIdx !== -1) {
+                state.placedGridPoints.splice(existingIdx, 1);
+              } else if (state.placedGridPoints.length < maxNeeded) {
+                state.placedGridPoints.push({ x: gx, y: gy });
+              }
+              render();
+            });
+          });
+
+          document.getElementById("clearGridPtsBtn")?.addEventListener("click", () => {
+            if (isScreenLocked() || state.questionSolved) return;
+            state.placedGridPoints = [];
+            render();
+          });
+
+          document.getElementById("checkGridBtn")?.addEventListener("click", () => {
+            if (isScreenLocked() || state.questionSolved) return;
+            if (state.placedGridPoints.length < maxNeeded) {
+              showFeedback(`Placera ut alla ${maxNeeded} punkter i rutnätet innan du rättar.`, "error");
+              return;
+            }
+            const userSorted = state.placedGridPoints.map((p) => `${p.x},${p.y}`).sort();
+            const targetSorted = q.targetPoints.map((p) => `${p.x},${p.y}`).sort();
+
+            if (userSorted.every((val, i) => val === targetSorted[i])) {
+              recordCorrectPoint(q.explanation);
+              if (state.scores[state.currentPhase] >= TARGET_SCORE) setTimeout(render, 850);
+            } else {
+              recordMistake(
+                q.isDiag
+                  ? "Inte riktigt. Följ de orangea hjälplinjerna (90° vinkelrätt mot diagonalen) och räkna lika många diagonalsteg på andra sidan (-1 poäng)."
+                  : "Inte riktigt. Följ de orangea hjälplinjerna och kontrollera antalet rutor på andra sidan om symmetrilinjen (-1 poäng)."
+              );
+            }
+          });
+
+          document.getElementById("nextQuestionBtn")?.addEventListener("click", loadNewQuestion);
+          return;
+        }
+
+        // ======================================================================
+        // PHASE 3: CAPITAL LETTER SYMMETRY CLASSIFICATION
+        // ======================================================================
+        if (q.type === "letter_classify") {
+          const showcase = `
+            <div style="font-size:4.4rem; font-weight:800; color:#1e1b4b; line-height:1; padding:6px 26px; background:#fff; border:1.5px solid var(--border-strong); border-radius:12px;">
+              ${q.letter}
+            </div>
+          `;
+
+          const workHTML = `
+            <div class="prompt-banner">${q.prompt}</div>
+            <div class="letter-showcase-box">${showcase}</div>
+            <div class="choices-grid-2x2">
+              ${q.choices.map((c) => `
+                <button type="button" class="choice-btn" data-cid="${c.id}" ${state.questionSolved ? "disabled" : ""}>
+                  ${c.label}
+                </button>
+              `).join("")}
+            </div>
+            <div class="feedback-box" id="feedbackBox"></div>
+          `;
+
+          card.innerHTML = `
+            ${headerHTML}
+            ${wrapInTwoColIfVisual(workHTML, q)}
+            <div class="action-row">
+              <span class="rule-reminder">Tips: Testa att vika bokstaven i rutan till vänster.</span>
+              <button type="button" class="btn-primary" id="nextQuestionBtn" style="${state.questionSolved ? "display:inline-block;" : "display:none;"}">Nästa uppgift →</button>
+            </div>
+          `;
+
+          wireVisualControls();
+
+          card.querySelectorAll(".choice-btn").forEach((btn) => {
+            btn.addEventListener("click", () => {
+              if (isScreenLocked() || state.questionSolved) return;
+              const chosen = q.choices.find((c) => c.id === btn.dataset.cid);
+              if (!chosen) return;
+              if (chosen.correct) {
+                btn.classList.add("correct-pick");
+                recordCorrectPoint(q.explanation);
+                if (state.scores[state.currentPhase] >= TARGET_SCORE) setTimeout(render, 850);
+              } else {
+                btn.classList.add("wrong-pick");
+                btn.disabled = true;
+                recordMistake("Inte riktigt. Testa vikningen till vänster och försök igen (-1 poäng).");
+              }
+            });
+          });
+
+          document.getElementById("nextQuestionBtn")?.addEventListener("click", loadNewQuestion);
+        }
+      }
+
+      // Header Concepts Dropdown
+      function setConceptsOpen(open) {
+        const dd = document.getElementById("conceptsDropdown");
+        const btn = document.getElementById("conceptsToggleBtn");
+        const arrow = document.getElementById("conceptsArrow");
+        dd.classList.toggle("open", open);
+        btn.classList.toggle("open", open);
+        btn.setAttribute("aria-expanded", String(open));
+        arrow.textContent = open ? "▴" : "▾";
+      }
+
+      document.getElementById("conceptsToggleBtn").addEventListener("click", (e) => {
+        if (isScreenLocked()) return;
+        e.stopPropagation();
+        const isOpen = document.getElementById("conceptsDropdown").classList.contains("open");
+        setConceptsOpen(!isOpen);
+      });
+
+      document.getElementById("conceptsCloseBtn").addEventListener("click", () => setConceptsOpen(false));
+
+      document.addEventListener("click", (e) => {
+        const wrap = document.getElementById("conceptsWrap");
+        if (wrap && !wrap.contains(e.target)) setConceptsOpen(false);
+      });
+
+      document.getElementById("teacherUnfreezeBtn").addEventListener("click", unfreezeApp);
+
+      document.addEventListener("keydown", (e) => {
+        if (e.shiftKey && (e.key === "L" || e.key === "l")) {
+          e.preventDefault();
+          if (isScreenLocked()) {
+            unfreezeApp();
+            return;
+          }
+          state.teacherMode = !state.teacherMode;
+          if (state.teacherMode) state.unlockedPhase = PHASES.length - 1;
+          renderTopBar();
+          return;
+        }
+
+        if (isScreenLocked()) {
+          e.preventDefault();
+          return;
+        }
+
+        if (e.shiftKey && (e.key === "F" || e.key === "f")) {
+          e.preventDefault();
+          loadNewQuestion();
+          return;
+        }
+
+        if (e.key === "Enter") {
+          const nextBtn = document.getElementById("nextQuestionBtn");
+          if (nextBtn && nextBtn.style.display !== "none") {
+            e.preventDefault();
+            loadNewQuestion();
+          }
+        }
+      });
+
+      loadNewQuestion();
+    })();
+  </script>
+</body>
+</html>
